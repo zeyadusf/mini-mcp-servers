@@ -21,6 +21,7 @@ or with the env var instead of the flag:
 from __future__ import annotations
 
 from mcp.server.fastmcp import FastMCP
+from mcp.types import ToolAnnotations
 
 from mcp_fs_server import tools
 from mcp_fs_server.config import resolve_workspace_root
@@ -33,25 +34,28 @@ WORKSPACE_ROOT = resolve_workspace_root()
 
 
 @mcp.tool(
-    annotations={
-        "title": "List directory",
-        "readOnlyHint": True,
-        "idempotentHint": True,
-        "openWorldHint": False,
-    }
+    annotations=ToolAnnotations(
+        title="List directory",
+        readOnlyHint=True,
+        idempotentHint=True,
+        openWorldHint=False,
+    )
 )
-def list_directory(path: str = ".", show_hidden: bool = False) -> list[dict]:
+def list_directory(
+    path: str = ".",
+    show_hidden: bool = False,
+) -> list[dict]:
     """List files and subdirectories at `path` (relative to the workspace root)."""
     return tools.list_directory(WORKSPACE_ROOT, path, show_hidden)
 
 
 @mcp.tool(
-    annotations={
-        "title": "Read file",
-        "readOnlyHint": True,
-        "idempotentHint": True,
-        "openWorldHint": False,
-    }
+    annotations=ToolAnnotations(
+        title="Read file",
+        readOnlyHint=True,
+        idempotentHint=True,
+        openWorldHint=False,
+    )
 )
 def read_file(path: str) -> str:
     """Read and return the full text content of `path`."""
@@ -59,13 +63,13 @@ def read_file(path: str) -> str:
 
 
 @mcp.tool(
-    annotations={
-        "title": "Write file",
-        "readOnlyHint": False,
-        "destructiveHint": True,
-        "idempotentHint": True,
-        "openWorldHint": False,
-    }
+    annotations=ToolAnnotations(
+        title="Write file",
+        readOnlyHint=False,
+        destructiveHint=True,
+        idempotentHint=True,
+        openWorldHint=False,
+    )
 )
 def write_file(path: str, content: str) -> dict:
     """Create or fully overwrite `path` with `content`."""
@@ -73,21 +77,30 @@ def write_file(path: str, content: str) -> dict:
 
 
 @mcp.tool(
-    annotations={
-        "title": "Edit file",
-        "readOnlyHint": False,
-        "destructiveHint": True,
-        "idempotentHint": False,
-        "openWorldHint": False,
-    }
+    annotations=ToolAnnotations(
+        title="Edit file",
+        readOnlyHint=False,
+        destructiveHint=True,
+        idempotentHint=False,
+        openWorldHint=False,
+    )
 )
-def edit_file(path: str, old_string: str, new_string: str) -> dict:
+def edit_file(
+    path: str,
+    old_string: str,
+    new_string: str,
+) -> dict:
     """
     Replace exactly one occurrence of old_string with new_string in
     an existing file. old_string must be unique within the file —
     include enough surrounding context if it isn't.
     """
-    return tools.edit_file(WORKSPACE_ROOT, path, old_string, new_string)
+    return tools.edit_file(
+        WORKSPACE_ROOT,
+        path,
+        old_string,
+        new_string,
+    )
 
 
 def main() -> None:
