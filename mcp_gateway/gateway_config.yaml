@@ -1,0 +1,20 @@
+# mcp_gateway/gateway_config.yaml
+#
+# Each downstream MCP server the Gateway should launch and aggregate.
+# Every server subprocess inherits the Gateway's full environment
+# (see downstream.py) — set FS_SERVER_WORKSPACE / GITHUB_TOKEN / etc.
+# in the shell before starting the Gateway, exactly as you would to
+# run each server standalone.
+#
+# name: becomes the tool-namespace prefix ("{name}__{tool}") — must
+#       be unique across this list.
+# command / args: how to launch the server subprocess.
+
+servers:
+  - name: fs
+    command: uv
+    args: ["run", "python", "-m", "mcp_fs_server.server"]
+
+  - name: github
+    command: uv
+    args: ["run", "python", "-m", "mcp_github_server.server"]
