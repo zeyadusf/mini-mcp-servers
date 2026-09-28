@@ -41,10 +41,7 @@ WORKSPACE_ROOT = resolve_workspace_root()
         openWorldHint=False,
     )
 )
-def list_directory(
-    path: str = ".",
-    show_hidden: bool = False,
-) -> list[dict]:
+def list_directory(path: str = ".", show_hidden: bool = False) -> list[dict]:
     """List files and subdirectories at `path` (relative to the workspace root)."""
     return tools.list_directory(WORKSPACE_ROOT, path, show_hidden)
 
@@ -85,22 +82,13 @@ def write_file(path: str, content: str) -> dict:
         openWorldHint=False,
     )
 )
-def edit_file(
-    path: str,
-    old_string: str,
-    new_string: str,
-) -> dict:
+def edit_file(path: str, old_string: str, new_string: str) -> dict:
     """
     Replace exactly one occurrence of old_string with new_string in
     an existing file. old_string must be unique within the file —
     include enough surrounding context if it isn't.
     """
-    return tools.edit_file(
-        WORKSPACE_ROOT,
-        path,
-        old_string,
-        new_string,
-    )
+    return tools.edit_file(WORKSPACE_ROOT, path, old_string, new_string)
 
 
 def main() -> None:

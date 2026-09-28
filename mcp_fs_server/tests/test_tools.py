@@ -10,11 +10,6 @@ that's verified manually via MCP Inspector per the project roadmap.
 from pathlib import Path
 
 import pytest
-from mcp_sandbox_core import (
-    FileNotFoundInWorkspace,
-    PathEscapesWorkspaceError,
-    SensitiveFileBlocked,
-)
 
 from mcp_fs_server.tools import (
     EditNotUniqueError,
@@ -23,6 +18,11 @@ from mcp_fs_server.tools import (
     list_directory,
     read_file,
     write_file,
+)
+from mcp_sandbox_core import (
+    FileNotFoundInWorkspace,
+    PathEscapesWorkspaceError,
+    SensitiveFileBlocked,
 )
 
 

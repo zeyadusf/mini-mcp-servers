@@ -6,11 +6,11 @@ objects — no real subprocess or MCP session involved, since
 registry.py is deliberately pure Python (see its module docstring).
 """
 
-import pytest
 from unittest.mock import Mock
+
+import pytest
 from mcp import ClientSession
 from mcp.types import Tool
-
 
 from mcp_gateway.downstream import DownstreamServer
 from mcp_gateway.registry import (

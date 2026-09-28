@@ -16,6 +16,8 @@ from __future__ import annotations
 
 import os
 
+from .env import GITHUB_TOKEN
+
 API_BASE_URL = "https://api.github.com"
 
 
@@ -24,7 +26,8 @@ class GitHubTokenNotConfiguredError(RuntimeError):
 
 
 def resolve_github_token() -> str:
-    token = os.environ.get("GITHUB_TOKEN")
+
+    token = GITHUB_TOKEN or os.environ.get("GITHUB_TOKEN")
     if not token:
         raise GitHubTokenNotConfiguredError(
             "GITHUB_TOKEN environment variable is not set. "

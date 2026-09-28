@@ -59,10 +59,7 @@ def get_repo_info(owner: str, repo: str) -> dict:
     )
 )
 def list_issues(
-    owner: str,
-    repo: str,
-    state: str = "open",
-    limit: int = 10,
+    owner: str, repo: str, state: str = "open", limit: int = 10
 ) -> list[dict]:
     """List issues for a repository. state: 'open' | 'closed' | 'all'."""
     return tools.list_issues(_CLIENT, owner, repo, state, limit)
@@ -77,12 +74,7 @@ def list_issues(
         openWorldHint=True,
     )
 )
-def create_issue(
-    owner: str,
-    repo: str,
-    title: str,
-    body: str | None = None,
-) -> dict:
+def create_issue(owner: str, repo: str, title: str, body: str | None = None) -> dict:
     """Create a new issue in owner/repo."""
     return tools.create_issue(_CLIENT, owner, repo, title, body)
 
@@ -96,12 +88,7 @@ def create_issue(
         openWorldHint=True,
     )
 )
-def add_comment(
-    owner: str,
-    repo: str,
-    issue_number: int,
-    body: str,
-) -> dict:
+def add_comment(owner: str, repo: str, issue_number: int, body: str) -> dict:
     """Add a comment to an existing issue or PR."""
     return tools.add_comment(_CLIENT, owner, repo, issue_number, body)
 

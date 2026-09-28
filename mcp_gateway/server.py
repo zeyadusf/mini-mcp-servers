@@ -31,8 +31,10 @@ from mcp import types
 from mcp.server import Server
 from mcp.server.stdio import stdio_server
 
+from mcp_gateway.approval import request_approval
 from mcp_gateway.config import load_gateway_config
 from mcp_gateway.downstream import connect_all
+from mcp_gateway.policy import needs_approval
 from mcp_gateway.registry import ToolRegistry, UnknownToolError, build_registry
 
 logging.basicConfig(
@@ -42,7 +44,7 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_CONFIG_PATH = Path(__file__).parent / "gateway_config.yaml"
 
-gateway = Server("mini-mcp-gateway")
+app = Server("mini-mcp-gateway")
 
 # Set once at startup by main(). Not per-call state — the registry is
 # built once when the Gateway connects to its downstream servers, and
@@ -59,7 +61,7 @@ def _get_registry() -> ToolRegistry:
     return _registry
 
 
-@gateway.list_tools()
+@app.list_tools()
 async def list_tools() -> list[types.Tool]:
     registry = _get_registry()
     return [
@@ -73,7 +75,7 @@ async def list_tools() -> list[types.Tool]:
     ]
 
 
-@gateway.call_tool()
+@app.call_tool()
 async def call_tool(name: str, arguments: dict) -> list[types.ContentBlock]:
     registry = _get_registry()
     try:
@@ -81,9 +83,28 @@ async def call_tool(name: str, arguments: dict) -> list[types.ContentBlock]:
     except UnknownToolError as e:
         return [types.TextContent(type="text", text=f"ERROR: {e}")]
 
+    logger.info(
+    "Tool call received: %s | arguments=%s",
+    name,
+    arguments,
+)
+    if needs_approval(registered) and not request_approval(registered, arguments):
+        # Declined, not failed: this goes back to the model as a normal
+        # tool result (not an exception), same as any other tool
+        # outcome — the model can react (rephrase, ask the user, give
+        # up on this step) instead of the whole turn erroring out.
+        return [
+            types.TextContent(
+                type="text", text=f"Tool call '{name}' was declined by the user."
+            )
+        ]
+
     result = await registered.server.session.call_tool(
         registered.original_name, arguments
     )
+    logger.info(
+    "Tool '%s' completed successfully",
+    name,)
     return result.content
 
 
@@ -101,7 +122,7 @@ async def _run(config_path: Path) -> None:
         )
 
         async with stdio_server() as (read, write):
-            await gateway.run(read, write, gateway.create_initialization_options())
+            await app.run(read, write, app.create_initialization_options())
 
 
 def main() -> None:

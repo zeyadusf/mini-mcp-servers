@@ -34,9 +34,7 @@ class EditNotUniqueError(Exception):
 
 
 def list_directory(
-    workspace_root: Path,
-    path: str = ".",
-    show_hidden: bool = False,
+    workspace_root: Path, path: str = ".", show_hidden: bool = False
 ) -> list[dict[str, Any]]:
     """
     List the contents of a directory inside the workspace.
@@ -46,16 +44,13 @@ def list_directory(
     excluded unless show_hidden=True.
     """
     full_path = resolve_in_workspace(workspace_root, path)
-
     if not full_path.is_dir():
         raise NotADirectoryError(f"'{path}' is not a directory.")
 
     entries: list[dict[str, Any]] = []
-
     for entry in full_path.iterdir():
         if not show_hidden and entry.name.startswith("."):
             continue
-
         entries.append(
             {
                 "name": entry.name,
@@ -64,13 +59,7 @@ def list_directory(
             }
         )
 
-    entries.sort(
-        key=lambda e: (
-            e["type"] != "directory",
-            e["name"].lower(),
-        )
-    )
-
+    entries.sort(key=lambda e: (e["type"] != "directory", e["name"].lower()))
     return entries
 
 
