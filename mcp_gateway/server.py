@@ -10,9 +10,10 @@ tool set is only known after connecting to whatever servers the
 config lists, so `list_tools`/`call_tool` have to be dynamic handlers
 that read from the ToolRegistry built at startup.
 
-No approval/policy enforcement yet — that's Phase 5. This phase is
-aggregation and routing only: prove the Host -> Gateway -> downstream
--> Gateway -> Host round trip works end to end.
+Tools annotated destructiveHint=True are gated by a human-in-the-loop
+approval, requested from the Host via MCP elicitation (see approval.py).
+NEVER print() or read stdin in this process: stdout/stdin are the MCP
+wire when running over stdio. Log to stderr only.
 
 Run standalone:
 
@@ -24,6 +25,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import os
+import sys
 from contextlib import AsyncExitStack
 from pathlib import Path
 
@@ -38,8 +40,8 @@ from mcp_gateway.policy import needs_approval
 from mcp_gateway.registry import ToolRegistry, UnknownToolError, build_registry
 
 logging.basicConfig(
-    level=logging.INFO, stream=None
-)  # stderr by default — stdout is the MCP wire
+    level=logging.INFO, stream=sys.stderr
+)  # stdout is the MCP wire — never log or print there
 logger = logging.getLogger(__name__)
 
 DEFAULT_CONFIG_PATH = Path(__file__).parent / "gateway_config.yaml"
@@ -75,37 +77,62 @@ async def list_tools() -> list[types.Tool]:
     ]
 
 
+def _error_result(message: str) -> types.CallToolResult:
+    return types.CallToolResult(
+        content=[types.TextContent(type="text", text=message)], isError=True
+    )
+
+
 @app.call_tool()
-async def call_tool(name: str, arguments: dict) -> list[types.ContentBlock]:
+async def call_tool(name: str, arguments: dict) -> types.CallToolResult:
     registry = _get_registry()
     try:
         registered = registry.resolve(name)
     except UnknownToolError as e:
-        return [types.TextContent(type="text", text=f"ERROR: {e}")]
+        return _error_result(f"ERROR: {e}")
 
-    logger.info(
-    "Tool call received: %s | arguments=%s",
-    name,
-    arguments,
-)
-    if needs_approval(registered) and not request_approval(registered, arguments):
-        # Declined, not failed: this goes back to the model as a normal
-        # tool result (not an exception), same as any other tool
-        # outcome — the model can react (rephrase, ask the user, give
-        # up on this step) instead of the whole turn erroring out.
-        return [
-            types.TextContent(
-                type="text", text=f"Tool call '{name}' was declined by the user."
+    logger.info("Tool call received: %s | arguments=%s", name, arguments)
+
+    if needs_approval(registered):
+        ctx = app.request_context
+        approved = await request_approval(
+            ctx.session, registered, arguments, related_request_id=ctx.request_id
+        )
+        if not approved:
+            # Declined, not failed: a normal tool result (isError=False) so
+            # the model can react (rephrase, ask the user, give up on this
+            # step) instead of the whole turn erroring out.
+            logger.info("Tool call '%s' was denied.", name)
+            return types.CallToolResult(
+                content=[
+                    types.TextContent(
+                        type="text",
+                        text=f"Tool call '{name}' was declined by the user.",
+                    )
+                ],
+                isError=False,
             )
-        ]
 
-    result = await registered.server.session.call_tool(
-        registered.original_name, arguments
+    try:
+        result = await registered.server.session.call_tool(
+            registered.original_name, arguments
+        )
+    except Exception as e:
+        logger.exception("Downstream call failed for '%s'", name)
+        return _error_result(f"Downstream call to '{name}' failed: {e}")
+
+    if result.isError:
+        logger.warning("Tool '%s' returned an error from downstream.", name)
+    else:
+        logger.info("Tool '%s' completed successfully", name)
+
+    # Preserve isError (and structuredContent) from the downstream result
+    # instead of flattening everything to a success.
+    return types.CallToolResult(
+        content=result.content,
+        structuredContent=result.structuredContent,
+        isError=result.isError,
     )
-    logger.info(
-    "Tool '%s' completed successfully",
-    name,)
-    return result.content
 
 
 async def _run(config_path: Path) -> None:
