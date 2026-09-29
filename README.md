@@ -67,9 +67,9 @@ To register this project in VS Code as an MCP server, add a configuration like t
         "-m",
         "mcp_gateway.server"
       ],
-      "cwd": "G:/__TESSERACT_AI/mini mcp servers/mini-mcp-servers",
+      "cwd": "your_Path/mini-mcp-servers",
       "env": {
-        "FS_SERVER_WORKSPACE": "G:/__TESSERACT_AI/mini mcp servers/mini-mcp-servers",
+        "FS_SERVER_WORKSPACE": "your_Path",
         "GITHUB_TOKEN": "your_github_token_here"
       }
     }
